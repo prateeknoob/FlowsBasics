@@ -10,10 +10,12 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlin.system.measureTimeMillis
 
 class MainActivity : ComponentActivity() {
     // val channel = Channel<Int>()
@@ -22,16 +24,41 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         GlobalScope.launch(Dispatchers.Main) {
-            val time = measureTimeMillis {
+            try {
+
                 produceses()
-                    .buffer(3)
-                    .collect {
-                        delay(1500)
-                        Log.d("TAG", it.toString())
+                    .map {
+                        delay(1000)
+                        it * 2
+                        Log.d("TAG", "Map Thread-${Thread.currentThread().name}")
                     }
+                    .flowOn(Dispatchers.IO)
+                    .filter {
+                        delay(500)
+                        Log.d("TAG", "Filter Thread-${Thread.currentThread().name}")
+                        it < 8
+                    }
+                    .flowOn(Dispatchers.Main)
+                    .collect {
+                        Log.d("TAG", "Collector Thread-${Thread.currentThread().name}")
+                    }
+            } catch (e: Exception) {
+                Log.d("TAG", e.message.toString())
             }
-            Log.d("TAG", time.toString())
         }
+
+
+//        GlobalScope.launch(Dispatchers.Main) {
+//            val time = measureTimeMillis {
+//                produceses()
+//                    .buffer(3)
+//                    .collect {
+//                        delay(1500)
+//                        Log.d("TAG", it.toString())
+//                    }
+//            }
+//            Log.d("TAG", time.toString())
+//        }
 
 
 //        GlobalScope.launch {
@@ -111,7 +138,11 @@ fun produceses(): Flow<Int> {
         val list = listOf(1, 2, 3, 4, 5, 6, 7)
         list.forEach {
             delay(1000)
+            Log.d("TAG", "Emitter Thread-${Thread.currentThread().name}")
             emit(it)
+            throw Exception("Emitter Error")
         }
+    }.catch {
+        Log.d("TAG5", "Emitter catch-${it.message.toString()}")
     }
 }
