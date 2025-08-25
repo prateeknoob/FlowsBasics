@@ -10,11 +10,11 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -23,29 +23,54 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        GlobalScope.launch(Dispatchers.Main) {
-            try {
 
-                produceses()
-                    .map {
-                        delay(1000)
-                        it * 2
-                        Log.d("TAG", "Map Thread-${Thread.currentThread().name}")
-                    }
-                    .flowOn(Dispatchers.IO)
-                    .filter {
-                        delay(500)
-                        Log.d("TAG", "Filter Thread-${Thread.currentThread().name}")
-                        it < 8
-                    }
-                    .flowOn(Dispatchers.Main)
-                    .collect {
-                        Log.d("TAG", "Collector Thread-${Thread.currentThread().name}")
-                    }
-            } catch (e: Exception) {
-                Log.d("TAG", e.message.toString())
+        GlobalScope.launch(Dispatchers.Main) {
+            val result = prooo()
+            delay(6000)
+            result.collect{
+                Log.d("FLOW", "Item- $it")
             }
         }
+
+
+
+//        GlobalScope.launch(Dispatchers.Main) {
+//            val result = produ()
+//            result.collect {
+//                Log.d("TAG", "Item- $it")
+//            }
+//        }
+//
+//        GlobalScope.launch(Dispatchers.Main) {
+//            val result = produ()
+//            delay(2500)
+//            result.collect {
+//                Log.d("TAG-2", "Item- $it")
+//            }
+//        }
+//        GlobalScope.launch(Dispatchers.Main) {
+//            try {
+//
+//                produceses()
+//                    .map {
+//                        delay(1000)
+//                        it * 2
+//                        Log.d("TAG", "Map Thread-${Thread.currentThread().name}")
+//                    }
+//                    .flowOn(Dispatchers.IO)
+//                    .filter {
+//                        delay(500)
+//                        Log.d("TAG", "Filter Thread-${Thread.currentThread().name}")
+//                        it < 8
+//                    }
+//                    .flowOn(Dispatchers.Main)
+//                    .collect {
+//                        Log.d("TAG", "Collector Thread-${Thread.currentThread().name}")
+//                    }
+//            } catch (e: Exception) {
+//                Log.d("TAG", e.message.toString())
+//            }
+//        }
 
 
 //        GlobalScope.launch(Dispatchers.Main) {
@@ -145,4 +170,27 @@ fun produceses(): Flow<Int> {
     }.catch {
         Log.d("TAG5", "Emitter catch-${it.message.toString()}")
     }
+}
+
+fun produ(): Flow<Int> {
+    var mutablesharedflo = MutableSharedFlow<Int>(1)
+    GlobalScope.launch {
+        val list = listOf<Int>(1, 2, 3, 4, 5)
+        list.forEach {
+            mutablesharedflo.emit(it)
+            delay(1000)
+        }
+    }
+    return mutablesharedflo
+}
+
+private fun prooo():Flow<Int>{
+    var mutablesharedflo = MutableStateFlow(10)
+    GlobalScope.launch {
+        delay(2000)
+        mutablesharedflo.emit(20)
+        delay(2000)
+        mutablesharedflo.emit(30)
+    }
+    return mutablesharedflo
 }
