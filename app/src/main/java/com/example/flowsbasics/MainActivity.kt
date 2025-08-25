@@ -3,48 +3,82 @@ package com.example.flowsbasics
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.example.flowsbasics.ui.theme.FlowsBasicsTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import kotlin.system.measureTimeMillis
 
 class MainActivity : ComponentActivity() {
     // val channel = Channel<Int>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        GlobalScope.launch {
-            val data: Flow<Int> = produce()
-            data.collect {
-                Log.d("TAG-1", it.toString())
+
+        GlobalScope.launch(Dispatchers.Main) {
+            val time = measureTimeMillis {
+                produceses()
+                    .buffer(3)
+                    .collect {
+                        delay(1500)
+                        Log.d("TAG", it.toString())
+                    }
             }
+            Log.d("TAG", time.toString())
         }
-        GlobalScope.launch {
-            val data: Flow<Int> = produce()
-            data.collect {
-                delay(2500)
-                Log.d("TAG-2", it.toString())
-            }
-        }
-        
+
+
+//        GlobalScope.launch {
+//            produce()
+//                .map {
+//                    it * 2
+//                }
+//                .filter {
+//                    it < 8
+//                }
+//                .collect {
+//                    Log.d("TAG", it.toString())
+//                }
+//        }
+
+
+//        GlobalScope.launch {
+//            val data = produce().toList()
+//            Log.d("TAG", data.toString())
+//        }
+//        GlobalScope.launch {
+//            produceses().onStart {
+//                emit(-1)
+//                Log.d("TAG", "Starting")
+//            }.onCompletion {
+//                emit(11)
+//                Log.d("TAG", "Completed")
+//            }.onEach {
+//                Log.d("TAG", "Emitting $it")
+//            }.collect {
+//                Log.d("TAG", it.toString())
+//            }
+//        }
+
+
+//        GlobalScope.launch {
+//            val data: Flow<Int> = produce()
+//            data.collect {
+//                Log.d("TAG-1", it.toString())
+//            }
+//        }
+
+
 //        GlobalScope.launch {
 //            delay(3500)
 //            job.cancel()
 //        }
-
-
-        setContent {
-            FlowsBasicsTheme {
-
-            }
-        }
     }
 }
 
@@ -69,5 +103,15 @@ fun produce() = flow<Int> {
     list.forEach {
         delay(1000)
         emit(it)
+    }
+}
+
+fun produceses(): Flow<Int> {
+    return flow<Int> {
+        val list = listOf(1, 2, 3, 4, 5, 6, 7)
+        list.forEach {
+            delay(1000)
+            emit(it)
+        }
     }
 }
